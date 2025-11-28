@@ -6,10 +6,7 @@ This repository contains MATLAB and Python scripts for feature extraction and cl
 
 ## HUPA Database
 
-To run the scripts, you need the **HUPA database**.
-
-**[HUPA corpus](https://zenodo.org/uploads/17704572)**
-
+To run the scripts, you need the **[HUPA database](https://zenodo.org/uploads/17704572)**
 
 After downloading and organising the data, the expected structure inside this repository is:
 
