@@ -17,34 +17,38 @@ HUPA-Voice-Analysis/
 ├── toolboxes/
 │   ├── AVCA-ByO-master/
 │   ├── covarep-master/
+│   ├── fastdfa/
+│   ├── hctsa-main/
 │   ├── hurst estimators/
 │   ├── ME-master/
-│   ├── rpde/
-│   ├── fastdfa/
-│   └── hctsa-main/
+│   └── rpde/
 ├── data/
 │   ├── HUPA_db/
-│   │   ├── HUPA_db.xlsx
-│   │   ├── README.md
 │   │   ├── healthy/
 │   │   │   ├── 50 kHz/      ← mono .wav files at / resampled to 50 kHz
 │   │   │   └── 25 kHz/      ← mono .wav files resampled to 25 kHz
-│   │   └── pathological/
-│   │       ├── 50 kHz/      ← mono .wav files at / resampled to 50 kHz
-│   │       └── 25 kHz/      ← mono .wav files resampled to 25 kHz
-│   ├── HUPA_voice_features_PRN_CPP_50kHz.csv
-│   ├── HUPA_voice_features_PRN_CPP_25kHz.csv
-│   ├── HUPA_Python_Results_Summary_50kHz.csv
+│   │   ├── pathological/
+│   │   │   ├── 50 kHz/      ← mono .wav files at / resampled to 50 kHz
+│   │   │   └── 25 kHz/      ← mono .wav files resampled to 25 kHz
+│   │   ├── HUPA_db.xlsx
+│   │   └── README.md
+│   ├── figures/
+│   │   ├── ROC_HUPA_50kHz_MATLAB.pdf
+│   │   ├── ROC_HUPA_50kHz_MATLAB.png
+│   │   ├── ROC_HUPA_50kHz_Python.pdf
+│   │   ├── ROC_HUPA_50kHz_Python.png
+│   │   ├── ROC_HUPA_25kHz_MATLAB.pdf
+│   │   ├── ROC_HUPA_25kHz_MATLAB.png
+│   │   ├── ROC_HUPA_25kHz_Python.pdf
+│   │   └── ROC_HUPA_25kHz_Python.png
 │   ├── HUPA_Python_Results_Summary_25kHz.csv
-│   └── figures/
-│       ├── ROC_HUPA_50kHz_MATLAB.png
-│       ├── ROC_HUPA_50kHz_MATLAB.pdf
-│       ├── ROC_HUPA_25kHz_MATLAB.png
-│       ├── ROC_HUPA_25kHz_MATLAB.pdf
-│       ├── ROC_HUPA_50kHz_Python.png
-│       ├── ROC_HUPA_50kHz_Python.pdf
-│       ├── ROC_HUPA_25kHz_Python.png
-│       └── ROC_HUPA_25kHz_Python.pdf
+│   ├── HUPA_Python_Results_Summary_50kHz.csv
+│   ├── HUPA_voice_features_PRN_CPP_25kHz.csv
+│   └── HUPA_voice_features_PRN_CPP_50kHz.csv
+├── HUPA_Features_Extraction.m
+├── HUPA_PRN_GridSearch_ROC.m
+├── HUPA_Python_GridSearch.py
+├── requirements.txt
 └── README.md
 ```
 
@@ -238,3 +242,4 @@ pip install -r requirements.txt
 ## Citation
 
 [Add here the reference to the HUPA database and the related publication, once finalised.]
+
