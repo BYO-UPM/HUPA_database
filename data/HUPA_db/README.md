@@ -7,18 +7,18 @@ Root:
 HUPA_db
 ├── healthy
 │   ├── 50 kHz
-│   └── 44.1 kHz
+│   └── 25 kHz
 └── pathological
     ├── 50 kHz
-    └── 44.1 kHz
+    └── 25 kHz
 ```
 
 * The folder "healthy" contains recordings from healthy speakers.
 * The folder "pathological" contains recordings from speakers with a voice disorder.
 * Within each of these, there are two subfolders according to the target sampling rate:
 
-  * "50 kHz"   -> mono signals at 50,000 Hz.
-  * "44.1 kHz" -> mono signals at 44,100 Hz.
+  * "50 kHz"  -> mono signals at 50,000 Hz (new filenames, see Section 3).
+  * "25 kHz"  -> mono signals at 25,000 Hz (original filenames).
 
 ## 2. AUDIO FORMAT
 
@@ -31,14 +31,23 @@ All audio files are:
 * Sampling rate:
 
   * 50 kHz in the "50 kHz" subfolder.
-  * 44.1 kHz in the "44.1 kHz" subfolder.
+  * 25 kHz in the "25 kHz" subfolder.
 
-File names are identical in the "50 kHz" and "44.1 kHz" folders; only the sampling rate differs.
+**Important note on filenames and distribution**
 
+* In the **25 kHz** folders, the audio files keep their **original filenames**.  
+  This 25 kHz version corresponds to the copy of the corpus that has historically been
+  distributed to the different research groups that requested access to HUPA. For that
+  reason, the original naming convention has been preserved in this branch of the data.
+* In the **50 kHz** folders, the audio files use the **new systematic filenames**
+  described in Section 3 (RRR_PATIENTCODE_SEX_AGE_CONDITION.wav).  
 
-## 3. FILE-NAMING CONVENTION
+The correspondence between the **new 50 kHz filenames** and the **original filenames**
+is given in `HUPA_db.xlsx` via the columns `Original file name` and `File name`, respectively in Healthy and Pathological worksheets.
 
-Audio files follow the naming convention:
+## 3. FILE-NAMING CONVENTION (50 kHz VERSION)
+
+For the 50 kHz version, audio files follow the naming convention:
 
 ```
 RRR_PATIENTCODE_SEX_AGE_CONDITION.wav
@@ -49,13 +58,13 @@ where:
 * RRR:
 
   * Row identifier (rowID) with three digits (001, 002, 003, ...).
-  * It is unique for each recording within the Excel file.
+  * It is unique for each recording within the spreadsheet.
   * It allows unambiguous identification of each recording, even when other fields coincide.
 
 * PATIENTCODE:
 
   * Numerical code representing the voice pathology, as defined in the "Patient code"
-    and "Pathology" fields of the Excel file.
+    and "Pathology" fields of the spreadsheet.
   * It summarises the speaker's main diagnosis (e.g. nodules, polyp, sulcus, oedema, etc.).
   * For healthy speakers, the value 0 is used, indicating absence of pathology.
 
@@ -77,49 +86,57 @@ where:
     * healthy      -> healthy speakers
     * pathological -> speakers with a voice disorder
 
-Examples:
-001_0_M_20_healthy.wav
-045_0_F_22_healthy.wav
-001_113_M_45_pathological.wav
-010_212_F_23_pathological.wav
+Examples (50 kHz version):
+001_0_M_20_healthy.wav  
+045_0_F_22_healthy.wav  
+001_113_M_45_pathological.wav  
+010_212_F_23_pathological.wav  
 
 In these examples:
 
 * 0 indicates absence of pathology (healthy).
 * 113, 212, etc. are pathology codes used in the HUPA_db metadata.
 
+For the **25 kHz version**, the files retain the **original filenames** used in the
+first distributed versions of the corpus.
 
-## 4. REFERENCE METADATA FILE: HUPA_db.xlsx
+## 4. REFERENCE METADATA SPREADSHEET: HUPA_db.xlsx
 
-The HUPA database is documented and linked to the audio files via the Excel file:
+The HUPA database is documented and linked to the audio files via the spreadsheet:
 
 ```
 HUPA_db.xlsx
 ```
 
-This workbook contains four sheets:
+This spreadsheet contains four worksheets:
 
 ```
 - Intro
-- Normals
+- Healthy
 - Pathological
 - Pathology classification
 ```
 
-### 4.1 Sheet "Normals"
+### 4.1 Worksheet "Healthy"
 
 * One row per recording from a healthy speaker.
 * Key columns:
 
   * File name
 
-    * Final .wav file name in the database
+    * New coded filename used in the 50 kHz version
       (RRR_PATIENTCODE_SEX_AGE_CONDITION.wav).
-    * It matches exactly the names of the audio files stored under "healthy".
+    * It matches exactly the names of the audio files stored under `healthy/50 kHz`.
+
+  * Original file name
+
+    * Original filename preserved in the 25 kHz version.
+    * It matches exactly the audio files stored under `healthy/25 kHz` and corresponds
+      to the naming convention used in earlier distributed copies of the corpus.
 
   * Sampling frequency  (first column)
 
-  * Sampling frequency  (second column)
+  * Sampling frequency2  (second column)
 
     * Two sampling-frequency fields, one per column.
     * They store the sampling rate information for each recording (e.g. for different
@@ -194,13 +211,14 @@ This workbook contains four sheets:
     * Free-text field with additional notes about the recording, clinical observations
       or deviations from the standard protocol.
 
-### 4.2 Sheet "Pathological"
+### 4.2 Worksheet "Pathological"
 
 * One row per recording from a speaker with a voice pathology.
 
-* The columns are the same as in the "Normals" sheet:
+* The columns are the same as in the "Healthy" worksheet:
 
   * File name
+  * Original file name
   * Sampling frequency (two columns)
   * Type
   * EGG
@@ -216,12 +234,12 @@ This workbook contains four sheets:
   * Jitter
   * Comments
 
-* In this sheet, "Type" is "pathological", and "Patient code" / "Pathology" specify
+* In this worksheet, "Type" is "pathological", and "Patient code" / "Pathology" specify
   the corresponding pathology for each recording.
 
-### 4.3 Sheet "Intro"
+### 4.3 Worksheet "Intro"
 
-* Summary sheet describing the database at a global level.
+* Summary worksheet describing the database at a global level.
 * Contains descriptive statistics and summaries such as:
 
   * distribution of age,
@@ -231,7 +249,7 @@ This workbook contains four sheets:
 
 It provides an overview of the composition of the HUPA corpus.
 
-### 4.4 Sheet "Pathology classification"
+### 4.4 Worksheet "Pathology classification"
 
 * Lookup table for the pathology codes used in HUPA_db.
 
@@ -246,7 +264,7 @@ It provides an overview of the composition of the HUPA corpus.
     * Text label describing the pathology (e.g. nodules, polyp, sulcus, oedema,
       leukoplakia, etc.).
 
-* This sheet defines the mapping between each "Patient code" and its corresponding
+* This worksheet defines the mapping between each "Patient code" and its corresponding
   clinical diagnosis.
 
 
@@ -259,10 +277,10 @@ It provides an overview of the composition of the HUPA corpus.
 
 * For each group there are two signal versions:
 
-  * 50 kHz mono
-  * 44.1 kHz mono
+  * 50 kHz mono  (new systematic filenames)
+  * 25 kHz mono  (original filenames preserved for compatibility with earlier distributions)
 
-* File names encode:
+* File names in the 50 kHz version encode:
 
   * row identifier (RRR),
   * pathology code (PATIENTCODE, 0 for healthy speakers),
@@ -270,9 +288,17 @@ It provides an overview of the composition of the HUPA corpus.
   * age,
   * global condition (healthy/pathological).
 
-* The Excel file HUPA_db.xlsx provides the complete metadata:
+* The 25 kHz version keeps the original filenames that were used in the copies of the
+  corpus distributed to different research groups.
 
-  * file names,
+* The HUPA_db.xlsx spreadsheet provides the complete metadata and the explicit mapping
+  between both naming schemes:
+
+  * `File name`           -> new coded filename (50 kHz)
+  * `Original file name`  -> original filename (25 kHz)
+
+  together with:
+
   * sampling frequencies,
   * clinical labels (Type, Patient code, Pathology),
   * demographic variables (Age, Sex),
