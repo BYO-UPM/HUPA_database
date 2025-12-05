@@ -14,7 +14,7 @@
 %
 % Output:
 %   - HUPA_voice_features_PRN_CPP_50kHz.csv
-%   - HUPA_voice_features_PRN_CPP_44_1kHz.csv
+%   - HUPA_voice_features_PRN_CPP_25Hz.csv
 
 clear; clc;
 
@@ -26,7 +26,7 @@ currentPath = fileparts(mfilename('fullpath'));
 % EXPECTED STRUCTURE:
 %   /toolboxes/  <- contains hurst, avca, covarep, etc.
 %   /data/       <- contains HUPA_db/healthy and HUPA_db/pathological
-%                    each with "50 kHz" and "44.1 kHz" subfolders
+%                    each with "50 kHz" and "25 kHz" subfolders
 toolboxes_dir = fullfile(currentPath, 'toolboxes');
 data_dir      = fullfile(currentPath, 'data');
 
@@ -45,10 +45,10 @@ path_healthy_50   = fullfile(data_dir, 'HUPA_db', 'healthy', '50 kHz');
 path_pathol_50    = fullfile(data_dir, 'HUPA_db', 'pathological', '50 kHz');
 out_csv_50        = fullfile(data_dir, 'HUPA_voice_features_PRN_CPP_50kHz.csv');
 
-% 44.1 kHz
-path_healthy_44   = fullfile(data_dir, 'HUPA_db', 'healthy', '44.1 kHz');
-path_pathol_44    = fullfile(data_dir, 'HUPA_db', 'pathological', '44.1 kHz');
-out_csv_44        = fullfile(data_dir, 'HUPA_voice_features_PRN_CPP_44_1kHz.csv');
+% 25 kHz
+path_healthy_25   = fullfile(data_dir, 'HUPA_db', 'healthy', '25 kHz');
+path_pathol_25    = fullfile(data_dir, 'HUPA_db', 'pathological', '25 kHz');
+out_csv_25      = fullfile(data_dir, 'HUPA_voice_features_PRN_CPP_25kHz.csv');
 
 %% ============= 2) TOOLBOX LOADING ======================================
 
@@ -88,10 +88,10 @@ fprintf('Toolboxes loaded and path refreshed.\n');
 fprintf('\n==================== 50 kHz DATASET ====================\n');
 run_extraction_for_fs(path_healthy_50, path_pathol_50, out_csv_50);
 
-%% ============= 4) RUN EXTRACTION FOR 44.1 kHz ==========================
+%% ============= 4) RUN EXTRACTION FOR 25 kHz ==========================
 
-fprintf('\n==================== 44.1 kHz DATASET ==================\n');
-run_extraction_for_fs(path_healthy_44, path_pathol_44, out_csv_44);
+fprintf('\n==================== 25 kHz DATASET ==================\n');
+run_extraction_for_fs(path_healthy_25, path_pathol_25, out_csv_25);
 
 fprintf('\nALL DATASETS COMPLETED.\n');
 
@@ -102,8 +102,14 @@ function run_extraction_for_fs(path_healthy, path_pathol, out_csv)
     % dataset (one healthy folder + one pathological folder) and saves
     % results to the specified CSV.
 
+    %% --- CHECK IF OUTPUT ALREADY EXISTS ---
+    if exist(out_csv, 'file')
+        fprintf('\n[SKIP] Output file already exists, skipping feature extraction:\n  %s\n', out_csv);
+        return;
+    end
+
     %% --- FILE LISTING ---
-    filesPathol = dir(fullfile(path_pathol, '*.wav'));
+    filesPathol  = dir(fullfile(path_pathol, '*.wav'));
     filesHealthy = dir(fullfile(path_healthy, '*.wav'));
 
     nPathol  = numel(filesPathol);
@@ -118,7 +124,7 @@ function run_extraction_for_fs(path_healthy, path_pathol, out_csv)
         nPathol, nHealthy, nTotal);
 
     %% --- GET AVCA FEATURE NAMES (PRN) ---
-
+    
     % Use one example file (pathological preferred, otherwise healthy)
     if nPathol > 0
         exampleFile = fullfile(path_pathol, filesPathol(1).name);
@@ -126,7 +132,9 @@ function run_extraction_for_fs(path_healthy, path_pathol, out_csv)
         exampleFile = fullfile(path_healthy, filesHealthy(1).name);
     end
 
-    [vec_example, namesPRN] = AVCA_features_stat(exampleFile, 'PRN');
+    % Silenciar cualquier salida (incluido "Number of reference points")
+    [~, vec_example, namesPRN] = evalc('AVCA_features_stat(exampleFile, ''PRN'');');
+
 
     if isempty(vec_example) || isempty(namesPRN)
         error('AVCA_features_stat(exampleFile, ''PRN'') returned empty results.');
@@ -136,7 +144,7 @@ function run_extraction_for_fs(path_healthy, path_pathol, out_csv)
 
     % Final feature names = all AVCA PRN names + CPP
     featureNamesOut = [namesPRN(:); {'CPP'}];
-    nFeatOut = numel(featureNamesOut);
+    nFeatOut        = numel(featureNamesOut);
 
     fprintf('AVCA PRN features: %d (will add CPP -> total %d columns).\n', ...
         nFeatAVCA, nFeatOut);
@@ -217,11 +225,8 @@ end
 % ========================================================================
 
 function f = extract_features_for_file_PRN_CPP(sFile)
-    % Extracts all AVCA PRN features (as returned by AVCA_features_stat)
-    % and appends CPP from Covarep.
-
     % 1) AVCA PRN features (P + R + N, all columns: mean & std)
-    [vPRN, ~] = AVCA_features_stat(sFile, 'PRN');
+    [~, vPRN, ~] = evalc('AVCA_features_stat(sFile, ''PRN'');');
     vPRN = vPRN(:).';  % ensure row vector
 
     % 2) CPP from Covarep (mean over frames)

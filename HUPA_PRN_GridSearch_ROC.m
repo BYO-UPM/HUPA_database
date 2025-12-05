@@ -34,12 +34,12 @@ dataDir = fullfile(currentPath, 'data');
 % List of CSV files and labels (per sampling rate)
 csvFiles = { ...
     'HUPA_voice_features_PRN_CPP_50kHz.csv', ...
-    'HUPA_voice_features_PRN_CPP_44_1kHz.csv' ...
+    'HUPA_voice_features_PRN_CPP_25kHz.csv' ...
 };
 
 fsLabels = { ...
     '50 kHz', ...
-    '44.1 kHz' ...
+    '25 kHz' ...
 };
 
 % Check if fitcnet (Neural Network) is available in this version
@@ -180,7 +180,7 @@ for ds = 1:numel(csvFiles)
         end
 
         X       = X(:, ~badCols);
-        featUse = featCols(~badCols); %#ok<NASGU>
+        featUse = featCols(~badCols); 
 
         % If no valid columns remain, skip group
         if isempty(X)
@@ -229,7 +229,7 @@ for ds = 1:numel(csvFiles)
         try
             [cvAUC, testAUC, fpr, tpr] = model_logreg(X_train, y_train, X_test, y_test);
             fprintf('  Logistic Regression: CV AUC = %.3f | Test AUC = %.3f\n', cvAUC, testAUC);
-            summaryRows(end+1,:) = {groupName, 'logreg', cvAUC, testAUC}; %#ok<AGROW>
+            summaryRows(end+1,:) = {groupName, 'logreg', cvAUC, testAUC}; 
             rocStruct.(groupName).logreg.fpr      = fpr;
             rocStruct.(groupName).logreg.tpr      = tpr;
             rocStruct.(groupName).logreg.testAUC  = testAUC;
@@ -264,20 +264,7 @@ for ds = 1:numel(csvFiles)
                 groupName, fsLabel, ME.message);
         end
 
-        % ---------- Model 4: k-NN ----------
-        try
-            [cvAUC, testAUC, fpr, tpr] = model_knn(X_train, y_train, X_test, y_test);
-            fprintf('  k-NN:               CV AUC = %.3f | Test AUC = %.3f\n', cvAUC, testAUC);
-            summaryRows(end+1,:) = {groupName, 'knn', cvAUC, testAUC};
-            rocStruct.(groupName).knn.fpr         = fpr;
-            rocStruct.(groupName).knn.tpr         = tpr;
-            rocStruct.(groupName).knn.testAUC     = testAUC;
-        catch ME
-            warning('  k-NN failed for group "%s" (%s): %s', ...
-                groupName, fsLabel, ME.message);
-        end
-
-        % ---------- Model 5: Neural Network (fitcnet) ----------
+        % ---------- Model 4: Neural Network (fitcnet) ----------
         if hasFitcnet
             try
                 [cvAUC, testAUC, fpr, tpr] = model_mlp(X_train, y_train, X_test, y_test);
@@ -313,8 +300,7 @@ for ds = 1:numel(csvFiles)
     prettyName.logreg  = 'Logistic';
     prettyName.svm_rbf = 'SVM RBF';
     prettyName.rf      = 'Random Forest';
-    prettyName.knn     = 'k-NN';
-    prettyName.mlp     = 'Neural Net';
+    prettyName.mlp     = 'MLP';
     
     f = figure;
     tiledlayout(2,2,'TileSpacing','compact','Padding','compact');
@@ -355,8 +341,8 @@ for ds = 1:numel(csvFiles)
     % ==== SAVE FIG ====
     if contains(csvPath, '50kHz')
         fs_suffix = '50kHz';
-    elseif contains(csvPath, '44_1kHz')
-        fs_suffix = '44_1kHz';
+    elseif contains(csvPath, '25kHz')
+        fs_suffix = '25kHz';
     else
         fs_suffix = 'unknownFS';
     end
@@ -371,7 +357,7 @@ for ds = 1:numel(csvFiles)
     file_base = sprintf('ROC_HUPA_%s_%s', fs_suffix, tool_suffix);
     % Example:
     %   ROC_HUPA_50kHz_MATLAB
-    %   ROC_HUPA_44_1kHz_MATLAB
+    %   ROC_HUPA_25kHz_MATLAB
     
     png_path = fullfile(fig_dir, [file_base '.png']);
     pdf_path = fullfile(fig_dir, [file_base '.pdf']);
@@ -587,69 +573,6 @@ if isempty(posIdx)
     posIdx = 2;
 end
 scoresTest = scoreTest(:,posIdx);
-[fprTest, tprTest, ~, testAUC] = perfcurve(ytest, scoresTest, 1);
-cvAUC = bestCvAUC;
-end
-
-% -------------------------------------------------------------------------
-function [cvAUC, testAUC, fprTest, tprTest] = model_knn(Xtrain, ytrain, Xtest, ytest)
-% Grid Search for k-Nearest Neighbors (k-NN).
-% Tunes: Number of Neighbors (k) and Distance Metric.
-% Performs manual Z-score standardization.
-
-cvInner = cvpartition(ytrain,'KFold',5);
-kGrid   = [3 5 7 9 11];
-distGrid = {'euclidean','cityblock'};
-
-bestCvAUC = -inf;
-bestK     = NaN;
-bestDist  = '';
-
-% --- Grid Search ---
-for ki = 1:numel(kGrid)
-    kVal = kGrid(ki);
-    for di = 1:numel(distGrid)
-        dist = distGrid{di};
-        foldAUC = zeros(cvInner.NumTestSets,1);
-        for k = 1:cvInner.NumTestSets
-            idxTr  = training(cvInner,k);
-            idxVal = test(cvInner,k);
-            
-            [Xtr, mu, sigma] = zscore(Xtrain(idxTr,:));
-            Xval = (Xtrain(idxVal,:) - mu) ./ sigma;
-
-            mdl = fitcknn(Xtr, ytrain(idxTr), ...
-                'NumNeighbors', kVal, ...
-                'Distance', dist, ...
-                'Standardize', false, ...
-                'ClassNames',[0 1]);
-
-            [~, scoreVal] = predict(mdl, Xval);
-            scores = scoreVal(:,2);
-            [~,~,~,aucVal] = perfcurve(ytrain(idxVal), scores, 1);
-            foldAUC(k) = aucVal;
-        end
-        meanAUC = mean(foldAUC);
-        if meanAUC > bestCvAUC
-            bestCvAUC = meanAUC;
-            bestK     = kVal;
-            bestDist  = dist;
-        end
-    end
-end
-
-% --- Retrain Best Model ---
-[XtrAll, muAll, sigmaAll] = zscore(Xtrain);
-mdlBest = fitcknn(XtrAll, ytrain, ...
-    'NumNeighbors', bestK, ...
-    'Distance', bestDist, ...
-    'Standardize', false, ...
-    'ClassNames',[0 1]);
-
-% --- Evaluate on Test Set ---
-XtestZ = (Xtest - muAll) ./ sigmaAll;
-[~, scoreTest] = predict(mdlBest, XtestZ);
-scoresTest = scoreTest(:,2);
 [fprTest, tprTest, ~, testAUC] = perfcurve(ytest, scoresTest, 1);
 cvAUC = bestCvAUC;
 end

@@ -8,24 +8,23 @@ Purpose:
     
     This version runs the full pipeline on TWO datasets:
         - ./data/HUPA_voice_features_PRN_CPP_50kHz.csv
-        - ./data/HUPA_voice_features_PRN_CPP_44_1kHz.csv
+        - ./data/HUPA_voice_features_PRN_CPP_25kHz.csv
 
     For each dataset:
     1. Loads features from CSV.
     2. Splits data into Train (80%) and Hold-out Test (20%).
     3. Defines feature groups (Noise, Perturbation, Tremor, Complexity).
-    4. For each group, runs a GridSearchCV on 5 classifiers:
+    4. For each group, runs a GridSearchCV on 4 classifiers:
        - Logistic Regression
        - SVM (RBF)
        - Random Forest
-       - k-NN
        - MLP (Neural Network)
     5. Evaluates the best models on the Test set and plots ROC curves.
 
 Usage:
     Ensure the input CSVs are located at:
         ./data/HUPA_voice_features_PRN_CPP_50kHz.csv
-        ./data/HUPA_voice_features_PRN_CPP_44_1kHz.csv
+        ./data/HUPA_voice_features_PRN_CPP_25kHz.csv
 
     Run via terminal:
         python HUPA_Python_GridSearch.py
@@ -35,7 +34,6 @@ Requirements:
 """
 
 import os
-import sys
 import warnings
 import numpy as np
 import pandas as pd
@@ -52,7 +50,6 @@ from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 
 # Suppress convergence warnings to keep the console clean during GridSearch
@@ -69,10 +66,10 @@ def main():
     # Two feature files: 50 kHz and 44.1 kHz
     csv_files = [
         "HUPA_voice_features_PRN_CPP_50kHz.csv",
-        "HUPA_voice_features_PRN_CPP_44_1kHz.csv",
+        "HUPA_voice_features_PRN_CPP_25kHz.csv",
     ]
-    fs_labels = ["50 kHz", "44.1 kHz"]
-    fs_suffixes = ["50kHz", "44_1kHz"]  # for output filenames
+    fs_labels = ["50 kHz", "25 kHz"]
+    fs_suffixes = ["50kHz", "25kHz"]  # for output filenames
 
     # CV scheme for all datasets
     cv_scheme = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -124,20 +121,6 @@ def main():
             },
         ),
 
-        # --- k-Nearest Neighbors ---
-        "knn": (
-            Pipeline([
-                ("imputer", SimpleImputer(strategy="median")),
-                ("scaler", StandardScaler()),
-                ("clf", KNeighborsClassifier()),
-            ]),
-            {
-                "clf__n_neighbors": [3, 5, 7, 11, 15],
-                "clf__weights": ["uniform", "distance"],
-                "clf__metric": ["euclidean", "manhattan"],
-            },
-        ),
-
         # --- MLP (Neural Network) ---
         "mlp": (
             Pipeline([
@@ -157,15 +140,14 @@ def main():
     pretty_names = {
         "logreg": "Logistic Regression",
         "svc_rbf": "SVM (RBF)",
-        "knn": "k-NN",
         "rf": "Random Forest",
-        "mlp": "Neural Network",
+        "mlp": "MLP",
     }
 
-    model_order = ["logreg", "svc_rbf", "rf", "knn", "mlp"]
+    model_order = ["logreg", "svc_rbf", "rf", "mlp"]
 
     # =========================================================================
-    # 3. LOOP OVER DATASETS (50 kHz / 44.1 kHz)
+    # 3. LOOP OVER DATASETS (50 kHz / 25 kHz)
     # =========================================================================
     for csv_file, fs_label, fs_suffix in zip(csv_files, fs_labels, fs_suffixes):
         input_csv_path = os.path.join(data_dir, csv_file)
@@ -295,6 +277,10 @@ def main():
             # Subset data for this specific group
             X_group = df.loc[:, cols]
 
+            cols_all_nan = X_group.columns[X_group.isna().all()]
+
+            X_group = X_group.drop(columns=cols_all_nan)
+
             X_train = X_group.iloc[idx_train]
             X_test = X_group.iloc[idx_test]
             y_train = y.iloc[idx_train]
@@ -361,7 +347,7 @@ def main():
         # =========================================================================
         groups_to_plot = ["Noise", "Perturbation", "Tremor", "Complexity"]
 
-        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        fig, axes = plt.subplots(2, 2, figsize=(10, 10))
         axes = axes.ravel()
         
         for i, gname in enumerate(groups_to_plot):
@@ -386,21 +372,21 @@ def main():
             ax.set_xlabel("False Positive Rate")
             ax.set_ylabel("True Positive Rate")
             ax.set_title(f"{gname} Features ({fs_label})")
-            ax.legend(loc="lower right", frameon=False, fontsize=9)
+            ax.legend(loc="lower right", frameon=False, fontsize=10)
             ax.grid(True, alpha=0.3)
         
-        fig.suptitle(f"HUPA ROC Curves – Sampling rate: {fs_label}", fontsize=14)
+        fig.suptitle(f"HUPA ROC Curves – Sampling rate: {fs_label}", fontsize=16)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         
         # ==== SAVE FIG ====
-        fig_dir = os.path.join(data_dir, "figures")
+        fig_dir = os.path.join(script_dir, "figures")
         os.makedirs(fig_dir, exist_ok=True)
         
         tool_suffix = "Python"  
         file_base = f"ROC_HUPA_{fs_suffix}_{tool_suffix}"
         # Example:
         #   ROC_HUPA_50kHz_Python
-        #   ROC_HUPA_44_1kHz_Python
+        #   ROC_HUPA_25kHz_Python
         
         fig_path_png = os.path.join(fig_dir, file_base + ".png")
         fig_path_pdf = os.path.join(fig_dir, file_base + ".pdf")
