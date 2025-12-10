@@ -50,39 +50,39 @@ is given in `HUPA_db.xlsx` via the columns `Original file name` and `File name`,
 For the 50 kHz version, audio files follow the naming convention:
 
 ```
-RRR_PATIENTCODE_SEX_AGE_CONDITION.wav
+PATIENTID_PATHOLOGYCODE_SEX_AGE_CONDITION.wav
 ```
 
 where:
 
-* RRR:
+* PATIENT ID:
 
-  * Row identifier (rowID) with three digits (001, 002, 003, ...).
-  * It is unique for each recording within the spreadsheet.
-  * It allows unambiguous identification of each recording, even when other fields coincide.
+  * Unique identifier for each recording in the corpus.
+  * Appears as the first field in the 50 kHz filename and as a dedicated patientID column in the Healthy and Pathological worksheets of HUPA_db.xlsx.
+  * Carries no clinical meaning; it is introduced solely to provide a stable, one-to-one link between each audio file and its corresponding metadata entry.
+  * Since each subject contributes a single recording per cohort (healthy or pathological), patientID also uniquely identifies each patient within that cohort, while the pair (condition, patientID) is unique across the whole corpus.
 
-* PATIENTCODE:
+* PATHOLOGY CODE:
 
-  * Numerical code representing the voice pathology, as defined in the "Patient code"
-    and "Pathology" fields of the spreadsheet.
-  * It summarises the speaker's main diagnosis (e.g. nodules, polyp, sulcus, oedema, etc.).
+  * Numerical code representing the voice pathology category.
+  * It corresponds to the “Patient code” and “Pathology” fields in the metadata spreadsheet and is summarised in Table~\ref{tab:pathologies_present}.
+  * It summarises the speaker’s main diagnosis (e.g. nodules, polyp, sulcus, oedema, etc.).
   * For healthy speakers, the value 0 is used, indicating absence of pathology.
 
 * SEX:
 
-  * Speaker's sex:
-
-    * M -> Male
-    * F -> Female
+  * Speaker’s sex, encoded as:
+    * M -> male
+    * F -> female
 
 * AGE:
 
-  * Speaker's age in years at the time of recording.
+  * Speaker’s age in years at the time of recording.
+  * This value matches the age field encoded in the filename and in the metadata spreadsheet.
 
 * CONDITION:
 
   * Global label of the vocal condition:
-
     * healthy      -> healthy speakers
     * pathological -> speakers with a voice disorder
 
@@ -314,4 +314,5 @@ It provides an overview of the composition of the HUPA corpus.
   * high-level summaries in "Intro",
 
   * and the mapping from pathology code to pathology name in "Pathology classification".
+
 
