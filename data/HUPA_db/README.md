@@ -122,10 +122,16 @@ This spreadsheet contains four worksheets:
 * One row per recording from a healthy speaker.
 * Key columns:
 
+  * Patient ID
+      
+      * It carries no clinical meaning and is introduced solely to provide a stable, one-to-one link between each
+        audio file and its corresponding metadata entry. Since each subject contributes a single recording per cohort
+        (healthy or pathological)     
+  
   * File name
 
     * New coded filename used in the 50 kHz version
-      (RRR_PATIENTCODE_SEX_AGE_CONDITION.wav).
+      (PATIENTID_PATHOLOGYCODE_SEX_AGE_CONDITION.wav).
     * It matches exactly the names of the audio files stored under `healthy/50 kHz`.
 
   * Original file name
@@ -178,14 +184,14 @@ This spreadsheet contains four worksheets:
 
     * Global or combined GRBAS score, according to the original clinical protocol.
 
-  * Patient code
+  * Pathology code
 
     * Numerical code associated with the pathology group or clinical category.
     * For healthy speakers, this is typically 0.
 
   * Pathology
 
-    * Textual description of the pathology corresponding to "Patient code".
+    * Textual description of the pathology corresponding to "Pathology code".
     * For healthy speakers this typically indicates "healthy" or absence of pathology.
 
   * F0, F1, F2, F3
@@ -217,6 +223,7 @@ This spreadsheet contains four worksheets:
 
 * The columns are the same as in the "Healthy" worksheet:
 
+  * Patient ID
   * File name
   * Original file name
   * Sampling frequency (two columns)
@@ -282,8 +289,8 @@ It provides an overview of the composition of the HUPA corpus.
 
 * File names in the 50 kHz version encode:
 
-  * row identifier (RRR),
-  * pathology code (PATIENTCODE, 0 for healthy speakers),
+  * Patient ID,
+  * pathology code (0 for healthy speakers),
   * sex (M/F),
   * age,
   * global condition (healthy/pathological).
@@ -300,9 +307,10 @@ It provides an overview of the composition of the HUPA corpus.
   together with:
 
   * sampling frequencies,
-  * clinical labels (Type, Patient code, Pathology),
+  * clinical labels (Type, Pathology code, Pathology),
   * demographic variables (Age, Sex),
   * perceptual GRBAS scores,
   * acoustic descriptors (F0, formants, peaks, jitter),
   * high-level summaries in "Intro",
+
   * and the mapping from pathology code to pathology name in "Pathology classification".
