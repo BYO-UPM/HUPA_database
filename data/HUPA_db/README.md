@@ -58,14 +58,13 @@ where:
 * PATIENT ID:
 
   * Unique identifier for each recording in the corpus.
-  * Appears as the first field in the 50 kHz filename and as a dedicated patientID column in the Healthy and Pathological worksheets of HUPA_db.xlsx.
   * Carries no clinical meaning; it is introduced solely to provide a stable, one-to-one link between each audio file and its corresponding metadata entry.
-  * Since each subject contributes a single recording per cohort (healthy or pathological), patientID also uniquely identifies each patient within that cohort, while the pair (condition, patientID) is unique across the whole corpus.
+  * Since each subject contributes a single recording per cohort (healthy or pathological), patient ID also uniquely identifies each patient within that cohort, while the pair (condition, patient ID) is unique across
+    the whole corpus.
 
 * PATHOLOGY CODE:
 
   * Numerical code representing the voice pathology category.
-  * It corresponds to the “Patient code” and “Pathology” fields in the metadata spreadsheet and is summarised in Table~\ref{tab:pathologies_present}.
   * It summarises the speaker’s main diagnosis (e.g. nodules, polyp, sulcus, oedema, etc.).
   * For healthy speakers, the value 0 is used, indicating absence of pathology.
 
@@ -314,5 +313,6 @@ It provides an overview of the composition of the HUPA corpus.
   * high-level summaries in "Intro",
 
   * and the mapping from pathology code to pathology name in "Pathology classification".
+
 
 
