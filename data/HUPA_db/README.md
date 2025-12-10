@@ -40,7 +40,7 @@ All audio files are:
   distributed to the different research groups that requested access to HUPA. For that
   reason, the original naming convention has been preserved in this branch of the data.
 * In the **50 kHz** folders, the audio files use the **new systematic filenames**
-  described in Section 3 (RRR_PATIENTCODE_SEX_AGE_CONDITION.wav).  
+  described in Section 3 (PATIENTID_PATHOLOGYCODE_SEX_AGE_CONDITION.wav).  
 
 The correspondence between the **new 50 kHz filenames** and the **original filenames**
 is given in `HUPA_db.xlsx` via the columns `Original file name` and `File name`, respectively in Healthy and Pathological worksheets.
@@ -314,3 +314,4 @@ It provides an overview of the composition of the HUPA corpus.
   * high-level summaries in "Intro",
 
   * and the mapping from pathology code to pathology name in "Pathology classification".
+
