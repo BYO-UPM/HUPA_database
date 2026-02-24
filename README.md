@@ -1,4 +1,4 @@
-# HUPA Voice Analysis Project
+# HUPA Voice Disorders Dataset
 
 This repository contains MATLAB and Python scripts for feature extraction and classification of sustained vowel voice signals (pathological vs. healthy) using the HUPA database. The focus is on Perturbation, Regularity, Noise (PRN), and Complexity features.
 
@@ -242,4 +242,5 @@ pip install -r requirements.txt
 ## Citation
 
 [Add here the reference to the HUPA database and the related publication, once finalised.]
+
 
