@@ -153,11 +153,6 @@ This spreadsheet contains four worksheets:
 
       * healthy
 
-  * EGG
-
-    * Indicates whether an electroglottographic (EGG) signal is available or relevant
-      for this case (if applicable).
-
   * Age
 
     * Speaker's age in years.
@@ -196,7 +191,7 @@ This spreadsheet contains four worksheets:
   * F0, F1, F2, F3
 
     * Fundamental frequency (F0) and the first three formant frequencies (F1–F3),
-      measured for the sustained vowel or speech segment, depending on the protocol.
+      measured for the sustained vowel.
 
   * Formants
 
@@ -227,7 +222,6 @@ This spreadsheet contains four worksheets:
   * Original file name
   * Sampling frequency (two columns)
   * Type
-  * EGG
   * Age
   * Sex
   * G, R, A, S, B
@@ -313,6 +307,7 @@ It provides an overview of the composition of the HUPA corpus.
   * high-level summaries in "Intro",
 
   * and the mapping from pathology code to pathology name in "Pathology classification".
+
 
 
 
