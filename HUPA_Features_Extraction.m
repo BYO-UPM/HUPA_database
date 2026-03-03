@@ -216,6 +216,29 @@ function run_extraction_for_fs(path_healthy, path_pathol, out_csv)
     T.FileName = fileNames(:);
     T.Label    = labels(:);
 
+
+    % --------------------------------------------------------------------
+    % Add metadata columns (Sex, Pathology code) from HUPA_db.xlsx
+    % This is required to reproduce gender- and subtype-level analyses later.
+    % --------------------------------------------------------------------
+    try
+        xlsx_path = find_hupa_db_xlsx(out_csv);
+        if ~isempty(xlsx_path)
+            [sexVals, pathCodeVals] = lookup_sex_and_pathology(fileNames(:), labels(:), xlsx_path, out_csv);
+            T.Sex = sexVals;  % string
+            T.('Pathology code') = pathCodeVals;  % int32
+        else
+            warning('HUPA_db.xlsx not found. Metadata will be set to missing.');
+            T.Sex = repmat("", height(T), 1);
+            T.('Pathology code') = int32(-1) * ones(height(T), 1, 'int32');
+        end
+    catch ME
+        warning('Could not add metadata columns (Sex, Pathology code): %s', ME.message);
+        T.Sex = repmat("", height(T), 1);
+        T.('Pathology code') = int32(-1) * ones(height(T), 1, 'int32');
+    end
+
+
     writetable(T, out_csv);
     fprintf('\nPROCESS COMPLETE. Data saved to: %s\n', out_csv);
 end
@@ -266,3 +289,114 @@ function cpp_mean = compute_cpp_covarep(sFile)
         cpp_mean = mean(vals);
     end
 end
+
+
+% ========================================================================
+% METADATA HELPERS (Sex and Pathology code)
+% ========================================================================
+
+function xlsx_path = find_hupa_db_xlsx(out_csv)
+    % Try to locate HUPA_db.xlsx near the output CSV.
+    dataDir = fileparts(out_csv);
+    candidates = { ...
+        fullfile(dataDir, 'HUPA_db.xlsx'), ...
+        fullfile(fileparts(dataDir), 'HUPA_db.xlsx') ...
+    };
+
+    xlsx_path = '';
+    for i = 1:numel(candidates)
+        if exist(candidates{i}, 'file')
+            xlsx_path = candidates{i};
+            return;
+        end
+    end
+end
+
+function [sexVals, pathCodeVals] = lookup_sex_and_pathology(fileNames, labels, xlsx_path, out_csv)
+    % fileNames: cell array of wav filenames (strings)
+    % labels: numeric vector (0=healthy, 1=pathological)
+    %
+    % For 50 kHz: match fileNames with column "File name" in the Excel
+    % For 25 kHz: match fileNames with column "Original file name" in the Excel
+    %
+    % NOTE: In the Excel, "Original file name" can appear as "*.nsp.wav".
+    % We normalise ".nsp.wav" -> ".wav" to match the actual audio filenames.
+
+    is25 = contains(out_csv, '25kHz') || contains(out_csv, '25 kHz');
+
+    % Read only required columns (preserve column names with spaces)
+    optsH = detectImportOptions(xlsx_path, 'Sheet', 'Healthy', 'VariableNamingRule', 'preserve');
+    optsH.SelectedVariableNames = {'File name','Original file name','Sex','Pathology code'};
+    Thealthy = readtable(xlsx_path, optsH);
+
+    optsP = detectImportOptions(xlsx_path, 'Sheet', 'Pathological', 'VariableNamingRule', 'preserve');
+    optsP.SelectedVariableNames = {'File name','Original file name','Sex','Pathology code'};
+    Tpathol = readtable(xlsx_path, optsP);
+
+    if is25
+        keyH = normalize_name(string(Thealthy.('Original file name')));
+        keyP = normalize_name(string(Tpathol.('Original file name')));
+    else
+        keyH = normalize_name(string(Thealthy.('File name')));
+        keyP = normalize_name(string(Tpathol.('File name')));
+    end
+
+    sexH = string(Thealthy.('Sex'));
+    sexP = string(Tpathol.('Sex'));
+
+    codeH = int32(Thealthy.('Pathology code'));
+    codeP = int32(Tpathol.('Pathology code'));
+
+    % Build maps
+    sexMapH = containers.Map();
+    codeMapH = containers.Map('KeyType','char','ValueType','int32');
+
+    for i = 1:numel(keyH)
+        k = char(keyH(i));
+        if ~isKey(sexMapH, k)
+            sexMapH(k) = sexH(i);
+            codeMapH(k) = codeH(i);
+        end
+    end
+
+    sexMapP = containers.Map();
+    codeMapP = containers.Map('KeyType','char','ValueType','int32');
+
+    for i = 1:numel(keyP)
+        k = char(keyP(i));
+        if ~isKey(sexMapP, k)
+            sexMapP(k) = sexP(i);
+            codeMapP(k) = codeP(i);
+        end
+    end
+
+    n = numel(fileNames);
+    sexVals = repmat("", n, 1);
+    pathCodeVals = int32(-1) * ones(n, 1, 'int32');
+
+    for i = 1:n
+        k = char(normalize_name(string(fileNames{i})));
+        if labels(i) == 0
+            if isKey(sexMapH, k)
+                sexVals(i) = string(sexMapH(k));
+                pathCodeVals(i) = codeMapH(k);
+            end
+        else
+            if isKey(sexMapP, k)
+                sexVals(i) = string(sexMapP(k));
+                pathCodeVals(i) = codeMapP(k);
+            end
+        end
+    end
+end
+
+function out = normalize_name(x)
+    % Normalise filenames to improve matching across sources:
+    % - lower-case
+    % - trim spaces
+    % - convert "*.nsp.wav" -> "*.wav"
+    x = lower(strtrim(string(x)));
+    x = replace(x, ".nsp.wav", ".wav");
+    out = x;
+end
+
