@@ -32,19 +32,28 @@ HUPA-Voice-Analysis/
 │   │   │   └── 25 kHz/      ← mono .wav files resampled to 25 kHz
 │   │   ├── HUPA_db.xlsx
 │   │   └── README.md
-│   ├── figures/
-│   │   ├── ROC_HUPA_50kHz_MATLAB.pdf
-│   │   ├── ROC_HUPA_50kHz_MATLAB.png
-│   │   ├── ROC_HUPA_50kHz_Python.pdf
-│   │   ├── ROC_HUPA_50kHz_Python.png
-│   │   ├── ROC_HUPA_25kHz_MATLAB.pdf
-│   │   ├── ROC_HUPA_25kHz_MATLAB.png
-│   │   ├── ROC_HUPA_25kHz_Python.pdf
-│   │   └── ROC_HUPA_25kHz_Python.png
+│   ├── HUPA_voice_features_PRN_CPP_25kHz.csv
+│   ├── HUPA_voice_features_PRN_CPP_50kHz.csv
 │   ├── HUPA_Python_Results_Summary_25kHz.csv
 │   ├── HUPA_Python_Results_Summary_50kHz.csv
-│   ├── HUPA_voice_features_PRN_CPP_25kHz.csv
-│   └── HUPA_voice_features_PRN_CPP_50kHz.csv
+│   ├── reviewer_analysis/
+│   │   ├── ReviewerAnalysis_25kHz_<Group>.csv
+│   │   └── ReviewerAnalysis_50kHz_<Group>.csv
+│   ├── subtype_error_audit/          ← subtype audit on the held-out test split
+│   │   └── SubtypeAudit_<fs>_<Group>_<ModelKey>.csv
+│   └── subtype_error_audit_oof/      ← subtype audit using OOF predictions across the full dataset
+│       └── SubtypeAudit_OOF_<fs>_<Group>_<ModelKey>.csv
+├── figures/
+│   ├── ROC_HUPA_25kHz_Python.png
+│   ├── ROC_HUPA_25kHz_Python.pdf
+│   ├── ROC_HUPA_50kHz_Python.png
+│   ├── ROC_HUPA_50kHz_Python.pdf
+│   ├── ROC_HUPA_25kHz_MATLAB.png
+│   ├── ROC_HUPA_25kHz_MATLAB.pdf
+│   ├── ROC_HUPA_50kHz_MATLAB.png
+│   ├── ROC_HUPA_50kHz_MATLAB.pdf
+│   └── confusion_matrices/
+│       └── CM_<fs>_<Group>_<ModelKey>.png
 ├── HUPA_Features_Extraction.m
 ├── HUPA_PRN_GridSearch_ROC.m
 ├── HUPA_Python_GridSearch.py
@@ -55,7 +64,12 @@ HUPA-Voice-Analysis/
 * The **healthy/** folder contains recordings from healthy speakers.
 * The **pathological/** folder contains recordings from patients with different laryngeal pathologies.
 * Each condition is available at **50 kHz** and **25 kHz** (all files are mono).
-* Inside `data/HUPA_db/` there is a spreadsheet `HUPA_db.xlsx` describing all speakers and recordings (age, sex, GRBAS scores, pathology codes, etc.), together with a local `README.md` in the same folder that documents the database structure and metadata fields in the Excel file.
+* Inside `data/HUPA_db/` there is a spreadsheet `HUPA_db.xlsx` describing all speakers and recordings (age, sex, GRBAS scores, pathology codes, etc.), together with a local `README.md` in the same folder that documents the database structure and metadata fields.
+
+**New (metadata used by the scripts).**  
+The file `HUPA_db.xlsx` is also used to:
+1) add metadata columns to the exported feature CSVs (e.g., `Sex` and `Pathology code`), and  
+2) map `Pathology code` values to human-readable pathology names using the worksheet **`Pathology classification`**.
 
 ---
 
@@ -93,44 +107,62 @@ Each CSV includes:
   * `FileName`
   * `Label` (0 = healthy, 1 = pathological)
 
+**New (metadata columns for reproducible modelling).**  
+The exported feature CSVs also include:
+* `Sex` (string)
+* `Pathology code` (integer; 0 for healthy, >0 for pathological subtypes)
+
+These columns are taken from `data/HUPA_db/HUPA_db.xlsx` and are intended to support stratified analyses and subtype-level audits.
+
+---
+
 ### 2. Classification & ROC Analysis (`HUPA_PRN_GridSearch_ROC.m`)
 
 For each CSV:
 
 1. Loads `HUPA_voice_features_PRN_CPP_50kHz.csv` or `HUPA_voice_features_PRN_CPP_25kHz.csv`.
-2. Defines feature groups:
+2. Defines feature sets:
 
    * Noise
    * Perturbation (including CPP and jitter/shimmer)
    * Tremor
    * Complexity / nonlinear measures
+   * **All features** (union of all feature blocks)
+
 3. Cleans the data:
 
    * Removes all-NaN / constant columns
    * Imputes remaining NaNs (median)
+
 4. Splits the data:
 
    * 80% Train (for hyperparameter optimisation via 5-fold CV)
    * 20% independent Test set
+
 5. Trains and tunes:
 
    * Logistic Regression (`fitclinear`)
    * SVM (RBF) (`fitcsvm` + `fitPosterior`)
    * Random Forest (`TreeBagger`)
    * MLP (`fitcnet`, if available)
+
 6. Evaluates models on the Test set and computes AUC.
-7. Plots ROC curves for the four feature groups (Noise, Perturbation, Tremor, Complexity).
 
-The script saves **one figure per sampling rate** in `data/figures/`, using the convention:
+7. **Plots ROC curves organised by classifier (2×2 subplots).**  
+   Each subplot corresponds to one classifier, and each ROC curve within a subplot corresponds to one feature set (Noise, Perturbation, Tremor, Complexity, All).
 
-* For 50 kHz:
+**Additional outputs (reviewer-oriented analysis).**
+Using thresholds selected from out-of-fold (OOF) predictions via Youden’s J, the script also:
+* saves test-set confusion matrices to `figures/confusion_matrices/`,
+* reports sex-stratified AUC (test and OOF when `Sex` is available),
+* writes subtype-level false negative audits:
+  * on the held-out test set (`data/subtype_error_audit/`),
+  * and using OOF predictions across the full dataset (`data/subtype_error_audit_oof/`).
 
-  * `ROC_HUPA_50kHz_MATLAB.png`
-  * `ROC_HUPA_50kHz_MATLAB.pdf`
-* For 25 kHz:
+The script saves **one ROC figure per sampling rate**:
 
-  * `ROC_HUPA_25kHz_MATLAB.png`
-  * `ROC_HUPA_25kHz_MATLAB.pdf`
+* `figures/ROC_HUPA_50kHz_MATLAB.png` and `.pdf`
+* `figures/ROC_HUPA_25kHz_MATLAB.png` and `.pdf`
 
 ---
 
@@ -145,7 +177,7 @@ The script expects the two CSVs generated by MATLAB:
 * `data/HUPA_voice_features_PRN_CPP_50kHz.csv`
 * `data/HUPA_voice_features_PRN_CPP_25kHz.csv`
 
-For each CSV, it runs the full pipeline independently.
+Each CSV may include `Sex` and `Pathology code`. If present, the script will run the reviewer-oriented analyses described below.
 
 ### Steps
 
@@ -153,20 +185,19 @@ For each sampling frequency (50 kHz, 25 kHz):
 
 1. Loads the corresponding CSV.
 
-2. Defines the same feature groups:
+2. Defines feature sets:
 
-   * Noise, Perturbation, Tremor, Complexity.
+   * Noise, Perturbation, Tremor, Complexity, and **All features**.
 
 3. Uses a common train–test split:
 
    * 80% Train, 20% Test, stratified by label.
 
-4. For each group, runs a `GridSearchCV` with 5-fold CV and AUC as the scoring metric, over:
+4. For each feature set, runs a `GridSearchCV` with 5-fold CV and AUC as the scoring metric, over:
 
    * Logistic Regression
    * SVM (RBF)
    * Random Forest
-   * k-NN
    * MLP
 
    Each model is wrapped in a `Pipeline` with:
@@ -176,29 +207,39 @@ For each sampling frequency (50 kHz, 25 kHz):
 
 5. Evaluates the best model (per algorithm) on the hold-out Test set.
 
-6. Plots ROC curves (2×2 subplots for Noise/Perturbation/Tremor/Complexity) and saves them to `data/figures/`:
+6. **Plots ROC curves organised by classifier (2×2 subplots).**  
+   Each subplot corresponds to one classifier, and ROC curves within a subplot correspond to feature sets (Noise, Perturbation, Tremor, Complexity, All). Figures are saved to `figures/`:
 
-   * 50 kHz:
+   * `figures/ROC_HUPA_50kHz_Python.png` and `.pdf`
+   * `figures/ROC_HUPA_25kHz_Python.png` and `.pdf`
 
-     * `ROC_HUPA_50kHz_Python.png`
-     * `ROC_HUPA_50kHz_Python.pdf`
-   * 25 kHz:
-
-     * `ROC_HUPA_25kHz_Python.png`
-     * `ROC_HUPA_25kHz_Python.pdf`
-
-7. Saves a summary CSV with all models and groups:
+7. Saves a summary CSV with all models and feature sets:
 
    * `data/HUPA_Python_Results_Summary_50kHz.csv`
    * `data/HUPA_Python_Results_Summary_25kHz.csv`
 
-Each summary file contains, for every combination of feature group and model:
+Each summary file contains, for every combination of feature set and model:
 
 * `Group`
 * `Model`
 * `Test_AUC`
 * `CV_AUC_Mean`
 * `Best_Params`
+
+**Additional outputs (reviewer-oriented analysis).**  
+For each feature set, the script also creates:
+
+* `data/reviewer_analysis/ReviewerAnalysis_<fs>_<Group>.csv` with:
+  * test AUC and CV AUC,
+  * sex-stratified AUC on test (`AUC_by_Sex_Test`) when `Sex` is available,
+  * sex-stratified AUC using OOF predictions (`AUC_by_Sex_OOF`) when `Sex` is available,
+  * Youden threshold selected from OOF predictions,
+  * test confusion-matrix metrics (Sensitivity, Specificity, BalancedAcc),
+  * paths to the confusion-matrix figure and subtype audit files.
+
+* subtype-level audits:
+  * `data/subtype_error_audit/SubtypeAudit_<fs>_<Group>_<ModelKey>.csv` (test split),
+  * `data/subtype_error_audit_oof/SubtypeAudit_OOF_<fs>_<Group>_<ModelKey>.csv` (OOF full dataset).
 
 ---
 
@@ -237,10 +278,16 @@ Install dependencies via:
 pip install -r requirements.txt
 ```
 
+**Optional (Windows stability).**  
+If parallel jobs cause issues on Windows, set the number of jobs to 1 before running:
+
+```bash
+set HUPA_N_JOBS=1
+python HUPA_Python_GridSearch.py
+```
+
 ---
 
 ## Citation
 
 [Add here the reference to the HUPA database and the related publication, once finalised.]
-
-
